@@ -138,7 +138,7 @@ export default function ProfilePage() {
         <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
           {/* Profile Image */}
           <div className="relative">
-            <div className="w-32 h-32 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-4xl font-bold">
+            <div className="w-32 h-32 bg-linear-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-4xl font-bold">
               {user.profileImage ? (
                 <img
                   src={user.profileImage}
@@ -332,7 +332,7 @@ export default function ProfilePage() {
                   Profile Image
                 </label>
                 <div className="flex items-center space-x-4">
-                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                  <div className="w-16 h-16 bg-linear-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
                     {formData.previewImage ? (
                       <img
                         src={formData.previewImage}
