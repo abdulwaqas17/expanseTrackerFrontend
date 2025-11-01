@@ -3,7 +3,7 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { useState, useEffect } from "react";
 import { Plus, Search, Filter, TrendingUp } from "lucide-react";
-import { Trash2, Edit } from "lucide-react";
+import { Trash2, Edit, FileDown } from "lucide-react";
 
 import {
   BarChart,
@@ -32,6 +32,28 @@ export default function IncomePage() {
 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedIncome, setSelectedIncome] = useState(null);
+
+  // fiteration states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSource, setSelectedSource] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("");
+
+  // main filtered incomes
+  const filteredIncomes = incomes.filter((income) => {
+    const matchesSearch = income.source
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
+    const matchesSource = selectedSource
+      ? income.source === selectedSource
+      : true;
+
+    const matchesMonth = selectedMonth
+      ? new Date(income.date).getMonth() === Number(selectedMonth)
+      : true;
+
+    return matchesSearch && matchesSource && matchesMonth;
+  });
 
   // User ke incomes ko directly use karo
   useEffect(() => {
@@ -69,7 +91,12 @@ export default function IncomePage() {
     return monthlyTotals.filter((m) => m.income > 0);
   };
 
+  // cal to get chart data
   const chartData = getMonthlyIncomeData();
+
+  console.log("===============chartData=====================");
+  console.log(chartData);
+  console.log("===============chartData=====================");
 
   // Add Icome Changes
   const handleInputChange = (e) => {
@@ -203,12 +230,31 @@ export default function IncomePage() {
 
     const data = new Blob([excelBuffer], { type: "application/octet-stream" });
     saveAs(data, `Income_List_${new Date().toISOString().split("T")[0]}.xlsx`);
-
   };
 
   // Total income calculate karo user ke incomes se
   const totalIncome = incomes.reduce((sum, income) => sum + income.amount, 0);
 
+  // Current Month Income Calculation
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+
+  console.log("=================currentMonth===================");
+  console.log(currentMonth, currentYear);
+  console.log("=================currentMonth===================");
+
+  const currentMonthIncome = incomes
+    .filter((income) => {
+      const incomeDate = new Date(income.date);
+      console.log("=================incomeDate===================");
+      console.log(incomeDate);
+      console.log("=================incomeDate===================");
+      return (
+        incomeDate.getMonth() === currentMonth &&
+        incomeDate.getFullYear() === currentYear
+      );
+    })
+    .reduce((sum, income) => sum + income.amount, 0);
 
   // emojis options
   const emojiOptions = [
@@ -259,7 +305,9 @@ export default function IncomePage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">This Month</p>
-              <p className="text-2xl font-bold text-gray-900">$8,500</p>
+              <p className="text-2xl font-bold text-gray-900">
+                ${currentMonthIncome}
+              </p>
             </div>
             <div className="p-3 bg-blue-100 rounded-xl">
               <span className="text-2xl">📅</span>
@@ -283,7 +331,7 @@ export default function IncomePage() {
       </div>
 
       {/* Chart Section */}
-      
+
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
         <h2 className="text-xl font-bold text-gray-900 mb-6">Income Chart</h2>
         <div className="h-80">
@@ -308,50 +356,85 @@ export default function IncomePage() {
       {/* Income List */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
         <div className="p-6 border-b border-gray-200">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 flex-wrap">
             <h2 className="text-xl font-bold text-gray-900">Income Sources</h2>
-            <div className="flex gap-3">
+
+            {/* 🔍 Filter & Download Controls */}
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Search Input */}
               <div className="relative">
                 <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search income..."
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Search incomes..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-48 sm:w-60"
                 />
               </div>
-              <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                <Filter className="h-4 w-4" />
-                Filter
+
+              {/* Source Filter */}
+              <select
+                value={selectedSource}
+                onChange={(e) => setSelectedSource(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Sources</option>
+                {[...new Set(incomes.map((i) => i.source))].map((src) => (
+                  <option key={src} value={src}>
+                    {src}
+                  </option>
+                ))}
+              </select>
+
+              {/* Month Filter */}
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Months</option>
+                {Array.from({ length: 12 }, (_, i) => (
+                  <option key={i} value={i}>
+                    {new Date(0, i).toLocaleString("default", {
+                      month: "long",
+                    })}
+                  </option>
+                ))}
+              </select>
+
+              {/* 🟢 Download Excel Button */}
+              <button
+                onClick={handleDownloadExcel}
+                className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 text-white px-4 py-2 rounded-lg hover:shadow-md hover:scale-[1.03] active:scale-95 transition-all duration-200"
+              >
+                <FileDown className="h-5 w-5" />
+                <span className="font-medium">Download Excel</span>
               </button>
             </div>
-            <button
-              onClick={handleDownloadExcel}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-green-50 text-green-600"
-            >
-              ⬇️ Download Excel
-            </button>
           </div>
         </div>
 
+        {/* 🔽 Filtered Income List */}
         <div className="p-6">
           {loading ? (
             <div className="text-center py-8">
               <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
               <p className="text-gray-600">Loading incomes...</p>
             </div>
-          ) : incomes.length === 0 ? (
+          ) : filteredIncomes.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-600">No income sources found.</p>
+              <p className="text-gray-600">No incomes found.</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {incomes.map((income) => (
+              {filteredIncomes.map((income) => (
                 <div
                   key={income._id}
                   className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
                       <span className="text-2xl">{income.icon}</span>
                     </div>
                     <div>
@@ -367,12 +450,12 @@ export default function IncomePage() {
                       </p>
                     </div>
                   </div>
+
                   <div className="flex items-center gap-4">
                     <p className="text-lg font-bold text-green-600">
-                      +${income.amount}
+                      +${income.amount.toLocaleString()}
                     </p>
 
-                    {/* Edit Button (for later use) */}
                     <button
                       onClick={() => {
                         setSelectedIncome(income);
@@ -392,7 +475,6 @@ export default function IncomePage() {
                       <Edit className="h-5 w-5 text-blue-600" />
                     </button>
 
-                    {/* Delete Button */}
                     <button
                       onClick={() => handleDelete(income._id)}
                       className="p-2 rounded-lg hover:bg-gray-100 transition"
@@ -477,9 +559,9 @@ export default function IncomePage() {
                   value={formData.amount}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="0.00"
-                  min="0"
-                  step="0.01"
+                  placeholder="100"
+                  min="1"
+                  step="1"
                   required
                 />
               </div>

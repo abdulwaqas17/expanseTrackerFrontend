@@ -38,3 +38,21 @@ export const updateUserProfile = async (token, formData) => {
     throw error.response?.data?.message || "Profile update failed";
   }
 };
+
+
+export const getAISuggestions = async (token, financialData) => {
+  try {
+    const response = await api.post(
+      "/get-ai-suggestion",
+      financialData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.message || "Error fetching AI suggestions";
+  }
+};
