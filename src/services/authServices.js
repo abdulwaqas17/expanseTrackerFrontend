@@ -6,7 +6,7 @@ export const registerUser = async (formData) => {
   try {
     const response = await api.post("/register", formData, {
       headers: {
-        "Content-Type": "multipart/form-data",
+        "Content-Type": "multipart/form-data",x
       },
     });
   
